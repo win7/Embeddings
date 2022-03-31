@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.linalg import norm
 
 class SkipGram():
     def __init__(self, seed, corpus, window=1, N=3, n=0.05, epochs=50):
@@ -45,7 +46,7 @@ class SkipGram():
     
     def backwardPropagation(self,h, y_pred, word_center, words_contex):
         # Computing sum of prediction errors
-        print(word_center, words_contex)
+        # print(word_center, words_contex)
         index = self.vocabulary.index(word_center)
         x = np.zeros((1, self.V)) # one-hot vector, 1xV
         x[0][index] = 1
@@ -85,9 +86,18 @@ class SkipGram():
                 h, y_pred = self.forwardPropagation(word_center)
                 self.backwardPropagation(h, y_pred, word_center, words_contex)
             
-            print("Epochs: {}".format(k + 1))
+            """ print("Epochs: {}".format(k + 1))
             print(self.w_input)
-            print(self.w_output)
+            print(self.w_output) """
+        return self.w_input
+    
+    def getSimilarity(self, token, k):
+        index = self.vocabulary.index(token)
+        u = self.w_input[index]
+
+        for k, v in enumerate(self.w_input):
+            result = np.dot(u, v) / (np.linalg.norm(u) * np.linalg.norm(v))
+            print("Cosine similar = {}, {}".format(result, self.vocabulary[k]))
     
     def softmax(self, vector):
         vector = np.exp(vector)
@@ -95,12 +105,13 @@ class SkipGram():
         return soft                             
 
 if __name__=="__main__":
-    print(123)
     corpus = "duct tape work anywher duct tape magic worship"
     corpus = "The man who passes the sentence should swing the sword"
     corpus = "El camino a casa es largo"
 
     sg = SkipGram(1234, corpus, window=1, N=3, n=0.05, epochs=50)
-    sg.traing()
+    w_input = sg.traing()
+    print((w_input))
+    sg.getSimilarity("camino", 0)
 
    
