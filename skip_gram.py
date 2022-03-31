@@ -1,13 +1,14 @@
 import numpy as np
 
 class SkipGram():
-    def __init__(self, seed, corpus, window=1, N=3, n=0.05):
+    def __init__(self, seed, corpus, window=1, N=3, n=0.05, epochs=50):
         np.random.seed(seed)
         self.corpus = corpus
         self.corpus_list = None
         self.window = window
         self.N = N
         self.n = n
+        self.epochs = epochs
         self.vocabulary = None
         self.T = 0
         self.V = 0
@@ -17,7 +18,8 @@ class SkipGram():
 
     def initialize(self):
         print("Initialize...")
-        self.corpus = self.corpus.lower()
+        self.corpus = self.corpus.strip().lower()
+        # self.corpus = self.corpus.decode("unicode_escape").encode("ascii", "ignore")
         self.corpus_list = self.corpus.split()
         aux_corpus_list = sorted(self.corpus_list)
         self.vocabulary = []
@@ -43,6 +45,7 @@ class SkipGram():
     
     def backwardPropagation(self,h, y_pred, word_center, words_contex):
         # Computing sum of prediction errors
+        print(word_center, words_contex)
         index = self.vocabulary.index(word_center)
         x = np.zeros((1, self.V)) # one-hot vector, 1xV
         x[0][index] = 1
@@ -67,20 +70,24 @@ class SkipGram():
         self.w_output = self.w_output - self.n * grad_w_output  
 
     def traing(self):
-        for index, word_center in enumerate(self.corpus_list):
-            print(index)
-            i = index - self.window
-            j = index + self.window
+        for k in range(self.epochs):
+            for index, word_center in enumerate(self.corpus_list):
+                i = index - self.window
+                j = index + self.window
 
-            if i < 0:
-                i = 0
-            if j >= self.T:
-                j = self.T
-        
-            words_contex = self.corpus_list[i:index] + self.corpus_list[index+1:j+1]
+                if i < 0:
+                    i = 0
+                if j >= self.T:
+                    j = self.T
             
-            h, y_pred = self.forwardPropagation(word_center)
-            self.backwardPropagation(h, y_pred, word_center, words_contex)
+                words_contex = self.corpus_list[i:index] + self.corpus_list[index+1:j+1]
+                
+                h, y_pred = self.forwardPropagation(word_center)
+                self.backwardPropagation(h, y_pred, word_center, words_contex)
+            
+            print("Epochs: {}".format(k + 1))
+            print(self.w_input)
+            print(self.w_output)
     
     def softmax(self, vector):
         vector = np.exp(vector)
@@ -93,7 +100,7 @@ if __name__=="__main__":
     corpus = "The man who passes the sentence should swing the sword"
     corpus = "El camino a casa es largo"
 
-    sg = SkipGram(1234, corpus)
+    sg = SkipGram(1234, corpus, window=1, N=3, n=0.05, epochs=50)
     sg.traing()
-    print(sg.w_input)
-    print(sg.w_output)
+
+   

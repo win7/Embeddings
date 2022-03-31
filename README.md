@@ -1,1 +1,4 @@
 # Embeddings
+
+### Requirements:
+- numpy
