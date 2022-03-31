@@ -1,8 +1,9 @@
 import numpy as np
 from numpy.linalg import norm
+import re, string
 
 class SkipGram():
-    def __init__(self, seed, corpus, window=1, N=3, n=0.05, epochs=50):
+    def __init__(self, seed, corpus, window=3, N=3, n=0.05, epochs=50):
         np.random.seed(seed)
         self.corpus = corpus
         self.corpus_list = None
@@ -19,8 +20,7 @@ class SkipGram():
 
     def initialize(self):
         print("Initialize...")
-        self.corpus = self.corpus.strip().lower()
-        # self.corpus = self.corpus.decode("unicode_escape").encode("ascii", "ignore")
+        self.cleanCorpus()
         self.corpus_list = self.corpus.split()
         aux_corpus_list = sorted(self.corpus_list)
         self.vocabulary = []
@@ -31,6 +31,7 @@ class SkipGram():
         self.V = len(self.vocabulary)
         self.w_input = np.random.uniform(-1, 1, (self.V, self.N))
         self.w_output = np.random.uniform(-1, 1, (self.N, self.V))
+        print(self.vocabulary)
 
     def forwardPropagation(self, word_center):
         # Computing hidden (h) layer
@@ -91,27 +92,43 @@ class SkipGram():
             print(self.w_output) """
         return self.w_input
     
-    def getSimilarity(self, token, k):
+    def getSimilarity(self, token, head):
+        similarities = np.zeros(self.V)
         index = self.vocabulary.index(token)
         u = self.w_input[index]
 
         for k, v in enumerate(self.w_input):
-            result = np.dot(u, v) / (np.linalg.norm(u) * np.linalg.norm(v))
-            print("Cosine similar = {}, {}".format(result, self.vocabulary[k]))
+            similarity = np.dot(u, v) / (np.linalg.norm(u) * np.linalg.norm(v))
+            similarities[k] = similarity
+            # print("Cosine similar = {}, {}".format(similarities[k], self.vocabulary[k]))
+
+        heads = np.argsort(similarities)
+        for k in range(head):
+            print("Cosine similar = {}, {}".format(similarities[heads[-1*(k+1)]], self.vocabulary[heads[-1*(k+1)]]))
     
     def softmax(self, vector):
         vector = np.exp(vector)
         soft = vector / np.sum(vector)
-        return soft                             
+        return soft
+
+    def cleanCorpus(self):
+        self.corpus = self.corpus.strip().lower()
+        self.corpus = re.sub("[%s]" % re.escape(string.punctuation), " ", self.corpus)
+        # print(corpus)
+        # self.corpus = self.corpus.decode("unicode_escape").encode("ascii", "ignore")
 
 if __name__=="__main__":
     corpus = "duct tape work anywher duct tape magic worship"
     corpus = "The man who passes the sentence should swing the sword"
     corpus = "El camino a casa es largo"
 
-    sg = SkipGram(1234, corpus, window=1, N=3, n=0.05, epochs=50)
+    with open("corpus.txt", encoding="utf8") as f:
+        corpus = f.read()
+        print(type(corpus))
+
+    sg = SkipGram(1234, corpus, window=3, N=10, n=0.05, epochs=500)
     w_input = sg.traing()
-    print((w_input))
-    sg.getSimilarity("camino", 0)
+    # print((w_input))
+    sg.getSimilarity("binarios", 10)
 
    
