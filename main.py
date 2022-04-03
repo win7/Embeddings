@@ -1,10 +1,9 @@
+from plot import plot
 from numpy.linalg import norm
 
 import numpy as np
 import matplotlib.pyplot as plt
 import re, string
-
-from plot import plot
 
 class Word2Vec():
     def __init__(self, seed, corpus, kind="sg", window=3, N=3, n=0.05, epochs=50):
@@ -118,28 +117,46 @@ class Word2Vec():
         self.w_output = self.w_output - self.n * grad_w_output  
 
     def traing(self):
-        for _ in range(self.epochs):
-            for k, target_word in enumerate(self.corpus_list):
-                target_word_index = self.vocabulary.index(target_word)
-                i = k - self.window
-                j = k + self.window
+        if self.kind == "sg":
+            for _ in range(self.epochs):
+                for k, target_word in enumerate(self.corpus_list):
+                    target_word_index = self.vocabulary.index(target_word)
+                    i = k - self.window
+                    j = k + self.window
 
-                if i < 0:
-                    i = 0
-                if j >= self.T:
-                    j = self.T
-            
-                context_words = self.corpus_list[i:k] + self.corpus_list[k+1:j+1]
-                context_words_index = []
-                for context_word in context_words:
-                    index = self.vocabulary.index(context_word)
-                    context_words_index.append(index)
+                    if i < 0:
+                        i = 0
+                    if j >= self.T:
+                        j = self.T
                 
-                h, y_pred = self.forward_propagation_sg(target_word_index)
-                self.backward_propagation_sg(h, y_pred, target_word_index, context_words_index)
+                    context_words = self.corpus_list[i:k] + self.corpus_list[k+1:j+1]
+                    context_words_index = []
+                    for context_word in context_words:
+                        index = self.vocabulary.index(context_word)
+                        context_words_index.append(index)
+                    
+                    h, y_pred = self.forward_propagation_sg(target_word_index)
+                    self.backward_propagation_sg(h, y_pred, target_word_index, context_words_index)
+        else:
+            for _ in range(self.epochs):
+                for k, target_word in enumerate(self.corpus_list):
+                    target_word_index = self.vocabulary.index(target_word)
+                    i = k - self.window
+                    j = k + self.window
 
-                """ h, y_pred = self.forward_propagation_cbow(context_words_index)
-                self.forward_propagation_cbow(h, y_pred, target_word_index, context_words_index) """
+                    if i < 0:
+                        i = 0
+                    if j >= self.T:
+                        j = self.T
+                
+                    context_words = self.corpus_list[i:k] + self.corpus_list[k+1:j+1]
+                    context_words_index = []
+                    for context_word in context_words:
+                        index = self.vocabulary.index(context_word)
+                        context_words_index.append(index)
+             
+                    h, y_pred = self.forward_propagation_cbow(context_words_index)
+                    self.forward_propagation_cbow(h, y_pred, target_word_index, context_words_index)
     
     def get_similarity(self, token, head):
         data = np.zeros((head, self.N))
