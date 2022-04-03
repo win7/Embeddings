@@ -4,8 +4,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import re, string
 
+from plot import plot
+
 class Word2Vec():
     def __init__(self, seed, corpus, kind="sg", window=3, N=3, n=0.05, epochs=50):
+        """
+        seed:
+        corpus:
+        king: sg or cbow
+        """
         np.random.seed(seed)
         self.corpus = corpus
         self.kind = kind
@@ -23,7 +30,7 @@ class Word2Vec():
 
     def initialize(self):
         print("Initialize...")
-        self.cleanCorpus()
+        self.clean_corpus()
         self.corpus_list = self.corpus.split()
         aux_corpus_list = sorted(self.corpus_list)
         self.vocabulary = []
@@ -36,7 +43,7 @@ class Word2Vec():
         self.w_output = np.random.uniform(-1, 1, (self.N, self.V))
         print(self.vocabulary)
 
-    def forwardPropagationSG(self, target_word_index):
+    def forward_propagation_sg(self, target_word_index):
         # Computing hidden (h) layer
         x = np.zeros((1, self.V)) # one-hot vector, 1xV
         x[0][target_word_index] = 1
@@ -47,7 +54,7 @@ class Word2Vec():
         y_pred = self.softmax(u) # 1xV
         return h, y_pred
     
-    def backwardPropagationSG(self,h, y_pred, target_word_index, context_words_index):
+    def backward_propagation_sg(self,h, y_pred, target_word_index, context_words_index):
         # Computing sum of prediction errors
         x = np.zeros((1, self.V)) # one-hot vector, 1xV
         x[0][target_word_index] = 1
@@ -71,7 +78,7 @@ class Word2Vec():
         self.w_input = self.w_input - self.n * grad_w_input
         self.w_output = self.w_output - self.n * grad_w_output
 
-    def forwardPropagationCBOW(self, context_words_index):
+    def forward_propagation_cbow(self, context_words_index):
         # Computing hidden (h) layer
         x = np.zeros((1, self.V)) # one-hot vector, 1xV
         for context_word_index in context_words_index:
@@ -86,7 +93,7 @@ class Word2Vec():
         y_pred = self.softmax(u) # 1xV
         return h, y_pred
 
-    def backwardPropagationCBOW(self,h, y_pred, target_word_index, context_words_index):
+    def forward_propagation_cbow(self,h, y_pred, target_word_index, context_words_index):
         # Computing sum of prediction errors
         x = np.zeros((1, self.V)) # one-hot vector, 1xV
         for context_word_index in context_words_index:
@@ -128,18 +135,16 @@ class Word2Vec():
                     index = self.vocabulary.index(context_word)
                     context_words_index.append(index)
                 
-                # h, y_pred = self.forwardPropagationSG(target_word_index)
-                # self.backwardPropagationSG(h, y_pred, target_word_index, context_words_index)
+                h, y_pred = self.forward_propagation_sg(target_word_index)
+                self.backward_propagation_sg(h, y_pred, target_word_index, context_words_index)
 
-                h, y_pred = self.forwardPropagationCBOW(context_words_index)
-                self.backwardPropagationCBOW(h, y_pred, target_word_index, context_words_index)
-            
-            """ print("Epochs: {}".format(k + 1))
-            print(self.w_input)
-            print(self.w_output) """
-        # return self.w_input
+                """ h, y_pred = self.forward_propagation_cbow(context_words_index)
+                self.forward_propagation_cbow(h, y_pred, target_word_index, context_words_index) """
     
-    def getSimilarity(self, token, head):
+    def get_similarity(self, token, head):
+        data = np.zeros((head, self.N))
+        rows_name = []
+
         similarities = np.zeros(self.V)
         if token in self.vocabulary:
             index = self.vocabulary.index(token)
@@ -153,15 +158,18 @@ class Word2Vec():
             heads = np.argsort(similarities)
             for k in range(head):
                 print("Cosine similar = {}, {}".format(similarities[heads[-1*(k+1)]], self.vocabulary[heads[-1*(k+1)]]))
+                data[k] = self.w_input[heads[-1*(k+1)]]
+                rows_name.append(self.vocabulary[heads[-1*(k+1)]])
         else:
             print("Not found..")
+        return data, rows_name
 
     def softmax(self, vector):
         vector = np.exp(vector)
         soft = vector / np.sum(vector)
         return soft
 
-    def cleanCorpus(self):
+    def clean_corpus(self):
         self.corpus = self.corpus.strip().lower()
         self.corpus = self.corpus.replace("«", "")
         self.corpus = self.corpus.replace("»", "")
@@ -172,10 +180,10 @@ class Word2Vec():
         # print(corpus)
         # self.corpus = self.corpus.decode("unicode_escape").encode("ascii", "ignore")
     
-    def saveModel(self):
+    def save_model(self):
         np.savez("go_sg.npz", self.w_input, self.w_output, self.vocabulary)
 
-    def loadModel(self):
+    def load_model(self):
         weight = np.loadz("go_sg.npz")
 
 if __name__=="__main__":
@@ -186,31 +194,13 @@ if __name__=="__main__":
     with open("corpus.txt", encoding="utf8") as f:
         corpus = f.read()
 
-    sg = Word2Vec(1234, corpus, window=3, N=30, n=0.05, epochs=10)
-    sg.traing()
-    # print((w_input))
+    w2v = Word2Vec(1234, corpus, window=3, N=15, n=0.05, epochs=10)
+    w2v.traing()
 
     while True:
         token = input("Ingresa token: ")
         if token == "exit":
             break
-        sg.getSimilarity(token, 10)
         
-    """ plt.pcolor(sg.w_input[:10])    
-    plt.colorbar() 
-    plt.show() """
-
-    """ from sklearn.decomposition import PCA
-    X = sg.vocabulary
-    pca = PCA(n_components=2)
-    result = pca.fit_transform(X)
-    # create a scatter plot of the projection
-    pyplot.scatter(result[:, 0], result[:, 1])
-    words = list(model.wv.vocab)
-    for i, word in enumerate(words):
-        pyplot.annotate(word, xy=(result[i, 0], result[i, 1]))
-    pyplot.show() """
-
-
-
-   
+        data, rows_name = w2v.get_similarity(token, 10)
+        plot(data, rows_name)   
