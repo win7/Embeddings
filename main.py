@@ -92,7 +92,7 @@ class Word2Vec():
         y_pred = self.softmax(u) # 1xV
         return h, y_pred
 
-    def forward_propagation_cbow(self,h, y_pred, target_word_index, context_words_index):
+    def backward_propagation_cbow(self,h, y_pred, target_word_index, context_words_index):
         # Computing sum of prediction errors
         x = np.zeros((1, self.V)) # one-hot vector, 1xV
         for context_word_index in context_words_index:
@@ -156,7 +156,7 @@ class Word2Vec():
                         context_words_index.append(index)
              
                     h, y_pred = self.forward_propagation_cbow(context_words_index)
-                    self.forward_propagation_cbow(h, y_pred, target_word_index, context_words_index)
+                    self.backward_propagation_cbow(h, y_pred, target_word_index, context_words_index)
     
     def get_similarity(self, token, head):
         data = np.zeros((head, self.N))
@@ -211,7 +211,7 @@ if __name__=="__main__":
     with open("corpus.txt", encoding="utf8") as f:
         corpus = f.read()
 
-    w2v = Word2Vec(1234, corpus, window=3, N=15, n=0.05, epochs=10)
+    w2v = Word2Vec(1234, corpus, kind="cbow", window=3, N=15, n=0.05, epochs=10)
     w2v.traing()
 
     while True:
