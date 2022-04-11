@@ -116,7 +116,7 @@ class Word2Vec():
         self.w_input = self.w_input - self.n * grad_w_input
         self.w_output = self.w_output - self.n * grad_w_output  
 
-    def traing(self):
+    def train(self):
         if self.kind == "sg":
             for _ in range(self.epochs):
                 for k, target_word in enumerate(self.corpus_list):
@@ -211,8 +211,8 @@ if __name__=="__main__":
     with open("corpus.txt", encoding="utf8") as f:
         corpus = f.read()
 
-    w2v = Word2Vec(1234, corpus, kind="cbow", window=3, N=15, n=0.05, epochs=10)
-    w2v.traing()
+    w2v = Word2Vec(42, corpus, kind="skip", window=5, N=15, n=0.05, epochs=30)
+    w2v.train()
 
     while True:
         token = input("Ingresa token: ")
@@ -220,4 +220,4 @@ if __name__=="__main__":
             break
         
         data, rows_name = w2v.get_similarity(token, 10)
-        plot(data, rows_name)   
+        plot(data, rows_name)
